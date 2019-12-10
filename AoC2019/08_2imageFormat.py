@@ -62,7 +62,7 @@ for n in final.pixels:
         #print(pix)
         if (pix == 1):
             #print('beep')
-            row.append('X')
+            row.append('#')
         else:
             row.append(' ')
     print(''.join(row))
