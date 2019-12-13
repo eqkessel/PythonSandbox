@@ -38,6 +38,10 @@ def crsProd(vect1, vect2):
     j = a[2]*b[0] - a[0]*b[2]
     k = a[0]*b[1] - a[1]*b[0]
     return Vector(i,j,k)
+
+def normalize(vect):
+    # Normalize a vector; i.e. make to have |v| = 1
+    return vect / abs(vect)
     
 class Vector:
     __unitComponents = 'ijk'
@@ -76,7 +80,6 @@ class Vector:
         except:
             name = ''
         
-        # TODO - make this check more robust to exclude named input params, no positional args
         if ((len(args) + len(kwargs)) == 0):
             raise ValueError("cannot create a 0-dimensional (trivial) vector")
             
@@ -209,6 +212,13 @@ class Vector:
     def __ne__(self, other):
         # Overload != comparison
         return not self.__eq__(other)
+    
+    def __neg__(self):
+        # Overload negation '-'
+        outVect = {}
+        for key in self.components:
+            outVect[key] = - self.components[key]
+        return Vector(outVect)
     
     def __add__(self, other):
         # Overload addition operation
