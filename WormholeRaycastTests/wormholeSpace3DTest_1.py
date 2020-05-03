@@ -56,8 +56,8 @@ def z_func(l):
     return intResult
 
 # Generate space curves
-space_l     = np.linspace(-500, 500, 100)
-space_theta = np.linspace(-m.pi, m.pi, 100)
+space_l     = np.linspace(-1000, 1000, 25)
+space_theta = np.linspace(-m.pi, m.pi, 16)
 
 # vectorize r and z functions so that they can be applied to l
 vec_r_fn = np.vectorize(r_func)
@@ -70,11 +70,29 @@ mesh_l, mesh_theta = np.meshgrid(space_l, space_theta)
 mesh_r = vec_r_fn(mesh_l)
 mesh_z = vec_z_fn(mesh_l)
 
+# split into +l and -l halves
+mesh_r_pos = np.copy(mesh_r)
+mesh_r_neg = np.copy(mesh_r)
+mesh_z_pos = np.copy(mesh_z)
+mesh_z_neg = np.copy(mesh_z)
+
+mesh_r_pos[mesh_l < 0] = np.nan
+mesh_r_neg[mesh_l > 0] = np.nan
+mesh_z_pos[mesh_l < 0] = np.nan
+mesh_z_neg[mesh_l > 0] = np.nan
+
 # set up the 3D plot
 fig = plot.figure()
 ax = fig.add_subplot(111, projection='3d')
+ax2 = fig.add_subplot(111, projection='3d')
 
 ax.plot_surface(mesh_r * np.cos(mesh_theta), mesh_r * np.sin(mesh_theta), mesh_z, alpha = 0.5)
+
+ax2.plot_surface(mesh_r_pos * np.cos(mesh_theta), mesh_r_pos * np.sin(mesh_theta), mesh_z_pos, alpha = 0.2, color = 'g')
+ax2.plot_surface(mesh_r_neg * np.cos(mesh_theta), mesh_r_neg * np.sin(mesh_theta), mesh_z_neg, alpha = 0.2, color = 'r')
+#ax2.axis('equal')
+
+plot.show(block = True)
 
 #space_r = vec_r_fn(space_l)
 #space_z = vec_z_fn(space_l)
