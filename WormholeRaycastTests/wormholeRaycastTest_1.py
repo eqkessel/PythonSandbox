@@ -25,7 +25,7 @@ import scipy.constants as const
 
 THROAT_DIA_m = 100
 THROAT_LEN_m = 100
-LENS_WIDTH_m = 25
+LENS_WIDTH_m = 100
 
 MASS_PARAM = LENS_WIDTH_m / 1.42953
 
@@ -58,13 +58,13 @@ def dr_dl(l):
     return dr_dl
 
 # polar coords of camera relative to wormhole
-cam_pos = vec.Vector(l = 2 * (THROAT_LEN_m + THROAT_DIA_m + LENS_WIDTH_m), theta = 0.0 * m.pi)
+cam_pos = vec.Vector(l = 1.5 * (THROAT_LEN_m + THROAT_DIA_m + LENS_WIDTH_m), theta = 0.0 * m.pi)
 print("Camera position = {!r}".format(cam_pos))
 
 # let a Cartesian corrdinate system exist at the camera w/ x along increasing l and y along increasing theta
 # given an camera ray angle in this coordinate system, the reverse unit vector of the angle's corresponding
 # vector is the ray of propogration, in terms of a radial component and an angular component
-ray_ang = m.pi * 0.99
+ray_ang = m.pi * 0.97
 ray_n = vec.Vector(l = -m.cos(ray_ang), theta = -m.sin(ray_ang))
 print("Ray propogation = {!r}".format(ray_n))
 
@@ -131,10 +131,26 @@ while (myInt.successful() and myInt.t > t_start and i < len(ts)):
 #print(i)
     
 # plot stuff
-plot.figure(1)
-plot.cla()
-plot.grid()
-plot.plot(r[0:i] * np.cos(theta[0:i]), r[0:i] * np.sin(theta[0:i]))
+# fig = plot.figure()
+# ax = fig.add_subplot(111, projection='polar')
+# c = ax.plot(theta[0:i], r[0:i])
+
+# try to change color when on opposite side
+pos_side = theta.copy()
+neg_side = theta.copy()
+
+pos_side[l <= 0] = np.nan
+neg_side[l >= 0] = np.nan
+
+fig2 = plot.figure()
+ax2 = fig2.add_subplot(111, projection='polar')
+ax2.plot(pos_side[0:i], r[0:i], color = 'b')
+ax2.plot(neg_side[0:i], r[0:i], color = 'r')
+# ax2.plot(pos_side[0:i], l[0:i], color = 'g')
+# ax2.plot(neg_side[0:i], l[0:i], color = 'y')
+ax2.set_title('Top view of embeding diagram: r vs. theta')
+ax2.legend(['+ side','- side'])
+
 
 '''
 # set up 2d Cartesian coords w/ x along increasing l and y along increasing theta
