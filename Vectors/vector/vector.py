@@ -43,6 +43,15 @@ def normalize(vect):
     # Normalize a vector; i.e. make to have |v| = 1
     return vect / abs(vect)
 
+def angle(vect):
+    # Compute polar angle of 2D vector from the positive axis of the first component counterclockwise
+    if (not (isinstance(vect, Vector))):
+        raise TypeError("input to angle() requires a vector")
+    if (not (len(vect) == 2)):
+        raise ValueError("can only find the angle of a vector in 2-space")
+    tmp = tuple(vect)
+    return math.atan2(tmp[1], tmp[0])
+
 def resize(vect, newSize, gapFill = 0):
     # Convert a vector in one size of space into another size of space, either by cutting the number
     # of components down (keeping the first components) or by adding blank components using gapFill.

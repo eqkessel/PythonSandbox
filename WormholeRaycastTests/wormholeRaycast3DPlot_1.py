@@ -98,7 +98,7 @@ print("Camera position = {!r}".format(cam_pos))
 # let a Cartesian corrdinate system exist at the camera w/ x along increasing l and y along increasing theta
 # given an camera ray angle in this coordinate system, the reverse unit vector of the angle's corresponding
 # vector is the ray of propogration, in terms of a radial component and an angular component
-ray_ang = m.pi * 0.97
+ray_ang = m.pi * 0.98
 ray_n = vec.Vector(l = -m.cos(ray_ang), theta = -m.sin(ray_ang))
 print("Ray propogation = {!r}".format(ray_n))
 
@@ -177,11 +177,15 @@ r_pos = np.copy(r)
 r_neg = np.copy(r)
 z_pos = np.copy(z)
 z_neg = np.copy(z)
+l_pos = np.copy(l)
+l_neg = -np.copy(l)
 
 r_pos[l < 0] = np.nan
 r_neg[l > 0] = np.nan
 z_pos[l < 0] = np.nan
 z_neg[l > 0] = np.nan
+l_pos[l < 0] = np.nan
+l_neg[l > 0] = np.nan
 # pos_side = theta.copy()
 # neg_side = theta.copy()
 
@@ -191,8 +195,9 @@ z_neg[l > 0] = np.nan
 # set up the 3D plot
 fig = plot.figure()
 #ax = fig.add_subplot(111, projection='3d')
-graph_3d = fig.add_subplot(121, projection='3d')
-graph_polar = fig.add_subplot(122, projection='polar')
+graph_3d = fig.add_subplot(131, projection='3d')
+graph_polar = fig.add_subplot(132, projection='polar')
+graph_l = fig.add_subplot(133, projection='polar')
 
 #ax.plot_surface(mesh_r * np.cos(mesh_theta), mesh_r * np.sin(mesh_theta), mesh_z, alpha = 0.5)
 
@@ -206,5 +211,8 @@ graph_3d.plot(r_neg[0:i] * np.cos(theta[0:i]), r_neg[0:i] * np.sin(theta[0:i]), 
 
 graph_polar.plot(theta[0:i], r_pos[0:i], color = 'g')
 graph_polar.plot(theta[0:i], r_neg[0:i], color = 'r')
+
+graph_l.plot(theta[0:i], l_pos[0:i], color = 'g')
+graph_l.plot(theta[0:i], l_neg[0:i], color = 'r')
 
 plot.show(block = True)
