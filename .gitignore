@@ -8,3 +8,7 @@ VectorPy/.vscode/
 VectorPy/__pycache__/
 
 WormholeRaycastTests/.vscode/
+
+DiscordBots/Goss Bot/.env
+
+DiscordBots/Goss Bot/tokenConfig.json
