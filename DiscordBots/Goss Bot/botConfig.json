@@ -1,0 +1,7 @@
+{
+    "bot_options":
+    {
+        "command_prefix": "!",
+        "description": "Goss Scholars Discord Bot - (Being) Developed by Ethan Kessel"
+    }
+}

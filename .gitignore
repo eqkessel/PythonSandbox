@@ -12,3 +12,5 @@ WormholeRaycastTests/.vscode/
 DiscordBots/Goss Bot/.env
 
 DiscordBots/Goss Bot/tokenConfig.json
+
+DiscordBots/Goss Bot/secretConfig.json

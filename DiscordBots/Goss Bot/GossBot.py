@@ -1,46 +1,46 @@
-# bot.py
+# GossBot.py
 import os
-import logging
-import logging.config
 import json
 
 import discord
-from dotenv import load_dotenv
+from discord.ext.commands import command, Bot, Cog, CommandNotFound
 
-class GossBot(discord.Client):
-    def __init__(self, *args, bot_env = None, **kwargs):
-        if (bot_env):
-            self.bot_env = bot_env
-        else:
-            load_dotenv()
-            self.bot_env = {
-                'TOKEN': os.getenv('BOT_TOKEN'),
-                'GUILD': os.getenv('BOT_GUILD')}
+PWD = os.path.dirname(os.path.abspath(__file__))
 
-        # logging.config.fileConfig('logging.cfg')
-        # self.log = log.getLogger(__name__)
-        # self.log.setLevel(log.DEBUG)
+SECRET_FILE = "secretConfig.json"
+CONFIG_FILE = "botConfig.json"
 
-        # streamLog = log.StreamHandler()
-        # fileLog = log.
+def load_json_filepath(file):
+    with open(os.path.join(PWD, file)) as path:
+        return json.load(path)
 
+class GossBot(Bot):
+    def __init__(self, *args, **kwargs):
+        self.secretConfig = load_json_filepath(SECRET_FILE)
+        self.config = load_json_filepath(CONFIG_FILE)
 
-        super().__init__(**kwargs)
-        
+        print("Initializing Goss Bot...")
+
+        super(GossBot, self).__init__(**self.config['bot_options'])
+
+        self.add_cog(FunCommands(self))
         return
 
     def run(self):
-        super().run(self.bot_env['TOKEN'])
+        super(GossBot, self).run(self.secretConfig['TOKEN'])
 
     async def on_ready(self):
-        self.guild = discord.utils.get(self.guilds, name=self.bot_env['GUILD'])
-        print(
-            f'{self.user} is connected to the following guild:\n'
-            f'{self.guild.name}(id: {self.guild.id})'
-        )
+        self.guild = discord.utils.get(self.guilds, name=self.secretConfig['GUILD'])
+        print(f'{self.user} connected to the following guild: {self.guild.name} (id: {self.guild.id})')
 
-        members = '\n - '.join([member.name for member in self.guild.members])
-        print(f'Guild Members:\n - {members}')
+class FunCommands(Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        return
+
+    @command()
+    async def boilerup(self, ctx, *, member: discord.Member = None):
+        await ctx.send(f'Hammer Down, {ctx.author.mention}!')
 
 bot = GossBot()
 bot.run()
