@@ -3,6 +3,7 @@
 #   Written by Ethan Kessel (c) 2020
 
 import os
+import importlib
 import argparse
 import json
 import threading
@@ -13,7 +14,9 @@ import asyncio
 import discord
 from discord.ext.commands import command, Bot, Cog, CommandNotFound
 
-VERSION = "0.2"
+# import funUtilsCog
+
+VERSION = "0.2.1"
 
 class KesselBot(Bot):
     #   Load .json file given a path and filename, used to get configs
@@ -52,6 +55,18 @@ class KesselBot(Bot):
 
         print(f"Loading bot Cogs")
         #   Load bot "Cogs" - contain grouped functionality
+        _cogs = self.config['enabled_cogs']
+        for cog_name in _cogs:
+            if (_cogs[cog_name]):
+                try:
+                    print(f"Attempting to load cog \'{cog_name}\'")
+                    module = importlib.import_module(cog_name)
+                    class_ = getattr(module, cog_name)
+                    self.add_cog(class_(self))
+                except ImportError as err:
+                    print(f"Unable to load cog \'{cog_name}\': {err}")
+                except:
+                    raise
 
         print(f"Bot initialization complete - ready to start with start()\n")
         return
@@ -132,6 +147,8 @@ if __name__ == '__main__':
         default='secretConfig.json', help='Filename of secret config with token data (default: %(default)s).')
     parser.add_argument('--config', dest='config', metavar='<filename>', default='botConfig.json',\
         help='Filename of bot config with general data (default: %(default)s).')
+    parser.add_argument('--debug', dest='debug', action='store_true',\
+        help='Fall out bottom of program to allow access with interactive console. LAUNCH CONSOLE WITH -i PARAMETER')
 
     args = parser.parse_args()
 
@@ -143,16 +160,29 @@ if __name__ == '__main__':
 
     botInstance = KesselBot(configPath=args.configPath, config=args.config, secret=args.secret)
 
-    #   Register shutdown signal handlers
-    signal.signal(signal.SIGTERM, botInstance.stop)
-    signal.signal(signal.SIGINT, botInstance.stop)
-
     # botInstance.start()
     botThread = threading.Thread(target=botInstance.start)
+
+    def kill(*args):
+        botInstance.stop(*args)
+        botThread.join(0.2)
+        try:
+            botThread._stop()
+        except:
+            pass
+        quit()
+
+    #   Register shutdown signal handlers
+    signal.signal(signal.SIGTERM, kill)
+    signal.signal(signal.SIGINT, kill)
+
     botThread.start()
     # botInstance.Thread.start()
     print(f"Bot thread successfully started")
 
+    if not args.debug:
+        while True:
+            botThread.join(0.2)
     # try:
     #     botThread = threading.Thread(target=botInstance.start)
     #     timer = threading.Timer(30.0, botInstance.stop)
