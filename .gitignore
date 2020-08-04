@@ -16,3 +16,5 @@ DiscordBots/Goss Bot/tokenConfig.json
 DiscordBots/Goss Bot/secretConfig.json
 
 DiscordBots/Goss Bot/__pycache__/
+
+DiscordBots/Goss Bot/logs/

@@ -3,6 +3,7 @@
 #   Written by Ethan Kessel (c) 2020
 
 import os
+import sys
 import importlib
 import argparse
 import json
@@ -14,9 +15,9 @@ import asyncio
 import discord
 from discord.ext.commands import command, Bot, Cog, CommandNotFound
 
-# import funUtilsCog
+import PrinTee
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 class KesselBot(Bot):
     #   Load .json file given a path and filename, used to get configs
@@ -28,6 +29,12 @@ class KesselBot(Bot):
     #   Constructor: takes filenames for config and secret files, path to configs (defaults to local dir)
     def __init__(self, *args, configPath = None, config, secret, **kwargs):
         print(f"Initializing KesselBot v{VERSION}")
+        
+        #   Asyncio creates its own console which means PrinTee doesn't tee off of it
+        #   Save the right console to fix it.
+        # print(f"sys.stdout is {sys.stdout} : {repr(sys.stdout)} : {type(sys.stdout)}")
+        self._stdout = sys.stdout
+        self._stderr = sys.stderr
 
         #   Save the local dir for future reference
         self.FILE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -53,7 +60,7 @@ class KesselBot(Bot):
         #   Set up a thread Event object to watch for shutdown
         # self.__shutdown_event = threading.Event()
 
-        print(f"Loading bot Cogs")
+        print(f"Loading bot Cogs:")
         #   Load bot "Cogs" - contain grouped functionality
         _cogs = self.config['enabled_cogs']
         for cog_name in _cogs:
@@ -64,19 +71,25 @@ class KesselBot(Bot):
                     class_ = getattr(module, cog_name)
                     self.add_cog(class_(self))
                 except ImportError as err:
-                    print(f"Unable to load cog \'{cog_name}\': {err}")
+                    print(f" Unable to load cog \'{cog_name}\': {err}")
                 except:
                     raise
 
-        print(f"Bot initialization complete - ready to start with start()\n")
+        print(f"Bot initialization complete - ready to start with start()")
         return
 
     async def on_ready(self):
+        #   This is where sys.stdout is different, reasign it back to "normal"
+        # print(f" BEFORE : sys.stdout is {sys.stdout} : {repr(sys.stdout)} : {type(sys.stdout)}")
+        sys.stdout = self._stdout
+        sys.stderr = self._stderr
+        # print(f"  AFTER : sys.stdout is {sys.stdout} : {repr(sys.stdout)} : {type(sys.stdout)}")
+
         #   Runs upon successful login and connection to Discord API
         print(f"Bot ready: signed in as {self.user} (id:{self.user.id})")
         #   Store the guild (server) specified in secret config
         self.guild = discord.utils.get(self.guilds, name=self.secret['GUILD'])
-        print(f"    Connected to the following guild: {self.guild.name} (id: {self.guild.id})\n")
+        print(f"    Connected to the following guild: {self.guild.name} (id: {self.guild.id})")
 
         #   Wait until the shutdown interrupt is recieved
         while not self.__shutdown_flag:
@@ -96,10 +109,10 @@ class KesselBot(Bot):
         # print(f"Bot started in Thread {self.ident}")
 
         #   Start the bot by connecting it to the Discord API
-        print(f"Connecting bot to Discord API...\n")
+        print(f"Connecting bot to Discord API...")
         asyncio.set_event_loop(self.loop)
         self.loop.run_until_complete(self.login(self.secret['TOKEN']))
-        self.loop.run_until_complete(self.connect())
+        self.loop.run_until_complete(self.connect())    #   Blocks here until disconnected
 
         self.clear()
 
@@ -137,6 +150,9 @@ class KesselBot(Bot):
         # self.loop.close()
 
 if __name__ == '__main__':
+    # print(f"sys.stdout is {sys.stdout} : {repr(sys.stdout)} : {type(sys.stdout)}")
+    PrinTee.start_printee_logging()
+
     #   Set up argument parser for command line
     parser = argparse.ArgumentParser(description="Kessel Bot")
 
@@ -178,7 +194,7 @@ if __name__ == '__main__':
 
     botThread.start()
     # botInstance.Thread.start()
-    print(f"Bot thread successfully started")
+    print(f" Bot thread successfully started")
 
     if not args.debug:
         while True:
