@@ -64,6 +64,13 @@ class ErrorHandlingCog(Cog):
         elif isinstance(error, commands.BadArgument):
             if ctx.command.qualified_name == 'tag list':  # Check if the command being invoked is 'tag list'
                 await ctx.send('I could not find that member. Please try again.')
+            else:
+                await ctx.send(error)
+            # elif error.message != None:
+            #     await ctx.send(error.message)
+            # else:
+            #     print(f"Encountered BadArgument exception with no message!")
+            #     traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
         else:
             # All other Errors not returned come here. And we can just print the default TraceBack.
