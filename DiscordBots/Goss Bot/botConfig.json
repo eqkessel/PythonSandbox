@@ -3,5 +3,39 @@
     {
         "command_prefix": "!",
         "description": "Goss Scholars Discord Bot - (Being) Developed by Ethan Kessel"
+    },
+    "enabled_cogs":
+    {
+        "ErrorHandlingCog": true,
+        "FunUtilsCog": true,
+        "BasicUtilsCog": true,
+        "NotACog": true,
+        "NotLoadedCog": false
+    },
+    "trusted_role": "Members",
+    "vanity_roles":
+    {
+        "aae": 734631034938720358,
+        "agri": 734631195207401562,
+        "bio": 734631314967363744,
+        "biomed": 734631628055380009,
+        "chem": 734632160153174028,
+        "civil": 734632415456395295,
+        "comp": 734632563548880996,
+        "constr": 734632747322310827,
+        "elec": 734633010145787974,
+        "eee": 734633268737081345,
+        "enre": 734633515379064892,
+        "indus": 734633749798584372,
+        "inter": 734633968460365854,
+        "mat": 734634127600386072,
+        "mech": 734634395897692220,
+        "multi": 734634724643045386,
+        "nuke": 734634932764409937,
+        "undecided": 734635172334665739,
+        "earhart": 734800805185585314,
+        "honors": 734800864837107774,
+        "meredith": 734800919748673539,
+        "online": 734801546344398902
     }
 }
