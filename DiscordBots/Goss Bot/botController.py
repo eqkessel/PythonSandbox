@@ -1,4 +1,5 @@
 import argparse
+import importlib
 
 import KesselBot
 import PrinTee
@@ -34,9 +35,11 @@ if __name__ == '__main__':
                 lives = args.restart - counter
             botInstance = KesselBot.KesselBot(configPath=args.configPath, config=args.config, secret=args.secret, lives=lives)
             botInstance.start(block=True)
+
             counter += 1
             if (counter > args.restart and args.restart >= 0) or botInstance.do_not_revive:
                 break
+            importlib.reload(KesselBot) #   To catch any changes to the files
     else:
         botInstance = KesselBot.KesselBot(configPath=args.configPath, config=args.config, secret=args.secret)
         botInstance.start()
