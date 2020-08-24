@@ -20,7 +20,7 @@ class ErrorHandlingCog(Cog):
     @Cog.listener()
     async def on_command_error(self, ctx, error):
         #   First thing: pipe all errors to the console for logging using traceback
-        print(f"Handling exception in command {ctx.command}", file=sys.stderr)
+        print(f"Handling exception in command {ctx.command}: {error}", file=sys.stderr)
         # traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
         #   Prevents any commands with local handlers being handled here in on_command_error.
