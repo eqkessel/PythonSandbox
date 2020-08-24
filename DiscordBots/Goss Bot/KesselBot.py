@@ -1,4 +1,4 @@
-#   KesselBot.py v0.1
+#   KesselBot.py
 #   Custom General-Purpose Utility Discord Bot
 #   Written by Ethan Kessel (c) 2020
 
@@ -8,16 +8,16 @@ import importlib
 import argparse
 import json
 import threading
-# from threading import Thread
 import signal
 
 import asyncio
 import discord
+import discord.ext.commands as commands
 from discord.ext.commands import command, Bot, Cog, CommandNotFound
 
 import PrinTee
 
-VERSION = "0.2.2"
+VERSION = "0.3.1"
 
 class KesselBot(Bot):
     #   Load .json file given a path and filename, used to get configs
@@ -27,14 +27,23 @@ class KesselBot(Bot):
             return json.load(filepath)
 
     #   Constructor: takes filenames for config and secret files, path to configs (defaults to local dir)
-    def __init__(self, *args, configPath = None, config, secret, **kwargs):
+    def __init__(self, *args, configPath = None, config, secret, lives=0, **kwargs):
         print(f"Initializing KesselBot v{VERSION}")
         
         #   Asyncio creates its own console which means PrinTee doesn't tee off of it
         #   Save the right console to fix it.
-        # print(f"sys.stdout is {sys.stdout} : {repr(sys.stdout)} : {type(sys.stdout)}")
         self._stdout = sys.stdout
         self._stderr = sys.stderr
+
+        #   Register shutdown signal handlers
+        signal.signal(signal.SIGTERM, self.stop)    #   Termination signal
+        signal.signal(signal.SIGINT, self.stop)     #   Keyboard interrupt
+                                                    #   Hangup signal (ssh disconnected)
+        signal.signal(signal.SIGHUP, lambda : print(f"Ignoring Hangup Signal"))
+
+        #   Flag to specify to try restarting or not
+        self.do_not_revive = False
+        self.lives = lives
 
         #   Save the local dir for future reference
         self.FILE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,21 +56,19 @@ class KesselBot(Bot):
         self.config = self.load_json_from_path(self.configPath, config)
         self.secret = self.load_json_from_path(self.configPath, secret)
 
-        # print(f"Initializing thread component")
-        # #   Class extends threading.Thread, need to initialize thread
-        # threading.Thread.__init__(self)
-
         print(f"Initializing bot component")
         #   Run parent class Bot constructor using options from config
         super(KesselBot, self).__init__(**self.config['bot_options'])
 
+        #   Register methods to run pre/post any command
+        self.before_invoke(self.__bot_before_invoke)
+
         #   Set up a private variable to monitor for shutdown
         self.__shutdown_flag = False
-        #   Set up a thread Event object to watch for shutdown
-        # self.__shutdown_event = threading.Event()
 
         print(f"Loading bot Cogs:")
         #   Load bot "Cogs" - contain grouped functionality
+        self.add_cog(BaseFunctionalityCog(self))
         _cogs = self.config['enabled_cogs']
         for cog_name in _cogs:
             if (_cogs[cog_name]):
@@ -74,16 +81,14 @@ class KesselBot(Bot):
                     print(f" Unable to load cog \'{cog_name}\': {err}")
                 except:
                     raise
-
+        
         print(f"Bot initialization complete - ready to start with start()")
         return
 
     async def on_ready(self):
-        #   This is where sys.stdout is different, reasign it back to "normal"
-        # print(f" BEFORE : sys.stdout is {sys.stdout} : {repr(sys.stdout)} : {type(sys.stdout)}")
+        #   This is where sys.stdout is different, reasign it back to "normal" 
         sys.stdout = self._stdout
         sys.stderr = self._stderr
-        # print(f"  AFTER : sys.stdout is {sys.stdout} : {repr(sys.stdout)} : {type(sys.stdout)}")
 
         #   Runs upon successful login and connection to Discord API
         print(f"Bot ready: signed in as {self.user} (id:{self.user.id})")
@@ -100,57 +105,101 @@ class KesselBot(Bot):
         await self.close()
         print(f"Bot successfully closed")
 
-    # class BotStopInterrupt(Exception):
-    #     pass
-
-    def start(self):
-        self.__shutdown_flag = False
-        # #   Overload of threading.Thread; call with start()
-        # print(f"Bot started in Thread {self.ident}")
-
+    #   Create a method to run before the invocation of any command
+    async def __bot_before_invoke(self, ctx):
+        print(f"User '{ctx.author}' triggered the command '{ctx.command}' with '{ctx.message.content}'")
+    
+    #   Wrap starting code in a single method
+    def __start_async_operations(self):
         #   Start the bot by connecting it to the Discord API
         print(f"Connecting bot to Discord API...")
         asyncio.set_event_loop(self.loop)
         self.loop.run_until_complete(self.login(self.secret['TOKEN']))
         self.loop.run_until_complete(self.connect())    #   Blocks here until disconnected
 
-        self.clear()
+    def start(self, *, block=False):
+        self.__shutdown_flag = False
+        
+        self.thread = threading.Thread(target=self.__start_async_operations)
+
+        self.thread.start()
+        print(f" Bot thread successfully started in Thread {self.thread.ident}")
+
+        if block:
+            self.thread.join()
+
+    def stop(self, signum=None, frame=None):
+        #   Stop bot and disconnect
+        if signum is not None:
+            print(f"Bot shutdown triggered via signal {signum} ({signal.Signals(signum).name});\
+                \nframe was {frame}")
+            self.do_not_revive = True
+        else:
+            print(f"Bot shutdown triggered")
+        
+        self.__shutdown_flag = True
+
+        if threading.current_thread() is not self.thread:   #   Prevent badness (?) if called from inside the thread
+            self.thread.join(5.0)   #   Wait on the thread to finish up for a bit
+            if self.thread.is_alive():
+                print(f"Forcibly stopped the bot thread... Check on this maybe?")
+                self.thread._stop() #   Stop the thread if it hasn't already
+        else:
+            print(f"Shutdown triggered from inside thread.")
+
+        self.clear()    #   Clean up the bot
 
         print(f"Bot exiting")
 
-        # #   Should run on successful bot exit
-        # printf(f"Stopping Thread {self.ident}")
 
-    # def start(self):
-    #     #   Start the bot by connecting it to the Discord API
-    #     print(f"Connecting bot to Discord API")
-    #     try:
-    #         asyncio.set_event_loop(self.loop)
-    #         self.loop.run_until_complete(self.login(self.secret['TOKEN']))
-    #         self.loop.run_until_complete(self.connect())
-    #     except KeyboardInterrupt:
-    #         print("KeyboardInterrupt recieved")
-    #     except KesselBot.BotStopInterrupt:
-    #         print("BotStopInterrupt recieved")
-    #     finally:
-    #         self.stop()
-    #         # self.loop.run_until_complete(self.close())
-    #         # self.loop.close()
+class BaseFunctionalityCog(Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.shutdown_cmd_flag = False
+        print(f"Cog \'BaseFunctionalityCog\' initialized")
+        return
 
-    def stop(self, signum = None, frame = None):
-        #   Stop bot and disconnect
-        if not signum:
-            print(f"Bot shutdown triggered, stopping")
+    @command(name='version', help="""Echos bot version info""")
+    async def version(self, ctx):
+        await ctx.send(f"Kessel Bot - v{VERSION}")
+
+    @command(name='shutdown', help="""Used to trigger bot shutdown from Discord""")
+    async def shutdown(self, ctx, mode=""):
+        check_flag = False
+        for role_id in self.bot.secret["ADMIN_ROLES"]:
+            check_role = discord.utils.get(ctx.guild.roles, id=role_id)
+            if check_role in ctx.author.roles:
+                check_flag = True
+                break
+
+        if not check_flag:
+            await ctx.send(f"You do not have permission to run this command!")
+            return
+
+        if self.shutdown_cmd_flag:
+            mode = mode.lower()
+            if mode == "":
+                await ctx.send(f"Shutting down.")
+                self.bot.do_not_revive = True
+                self.bot.stop()
+            elif mode == "restart":
+                if self.bot.lives == 0:
+                    await ctx.send(f"Shutting down.")
+                else:
+                    await ctx.send(f"Restarting. {self.bot.lives - 1} restarts left.")
+                self.bot.stop()
+            elif mode == "cancel":
+                self.shutdown_cmd_flag = False
+                await ctx.send(f"Shutdown canceled.")
+            else:
+                self.shutdown_cmd_flag = False
+                await ctx.send(f"Shutdown canceled.")
         else:
-            print(f"Bot shutdown triggered via {signum}, stopping")
-        self.__shutdown_flag = True
-        #raise KesselBot.BotStopInterrupt
-        # self.loop.close()
-        # self.loop.run_until_complete(self.close())
-        # self.loop.close()
+            self.shutdown_cmd_flag = True
+            await ctx.send(f"Do you really want to shut down? Use `{ctx.prefix}shutdown` to confirm, `{ctx.prefix}shutdown restart` to try restarting ({self.bot.lives} automatic restarts left), `{ctx.prefix}shutdown cancel` to cancel")
 
 if __name__ == '__main__':
-    # print(f"sys.stdout is {sys.stdout} : {repr(sys.stdout)} : {type(sys.stdout)}")
+    # Start our tee
     PrinTee.start_printee_logging()
 
     #   Set up argument parser for command line
@@ -168,48 +217,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # def spawn_bot(*args, **kwargs):
-    #     botInstance = KesselBot(*args, **kwargs)
-    #     botInstance.start()
-
-    # botThread = threading.Thread(target=spawn_bot, )
-
     botInstance = KesselBot(configPath=args.configPath, config=args.config, secret=args.secret)
 
-    # botInstance.start()
-    botThread = threading.Thread(target=botInstance.start)
-
-    def kill(*args):
-        botInstance.stop(*args)
-        botThread.join(0.2)
-        try:
-            botThread._stop()
-        except:
-            pass
-        quit()
-
-    #   Register shutdown signal handlers
-    signal.signal(signal.SIGTERM, kill)
-    signal.signal(signal.SIGINT, kill)
-
-    botThread.start()
-    # botInstance.Thread.start()
-    print(f" Bot thread successfully started")
+    
+    botInstance.start() #   Launch the bot by telling it to start it's thread 
 
     if not args.debug:
-        while True:
-            botThread.join(0.2)
-    # try:
-    #     botThread = threading.Thread(target=botInstance.start)
-    #     timer = threading.Timer(30.0, botInstance.stop)
-    #     botThread.start()
-    #     print(f"Bot thread successfully started")
-
-    #     # timer.start()
-    #     # timer.join()
-    #     # print(f"Timer expired")
-
-    #     quit()
-    # finally:
-    #     print(f"Exiting")
-    #     botThread._stop()
+        botInstance.thread.join()
