@@ -17,7 +17,7 @@ from discord.ext.commands import command, Bot, Cog, CommandNotFound
 
 import PrinTee
 
-VERSION = "0.3.1"
+VERSION = "0.3.2"
 
 class KesselBot(Bot):
     #   Load .json file given a path and filename, used to get configs

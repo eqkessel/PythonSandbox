@@ -10,6 +10,7 @@ from discord.ext.commands import command, Bot, Cog, CommandNotFound
 class BasicUtilsCog(Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.pinEmoji = '📌'    # I don't like doing this hardcoded but JSON files don't like emoji
         print(f"Cog \'{__name__}\' initialized")
         return
 
@@ -100,3 +101,42 @@ class BasicUtilsCog(Cog):
             raise commands.BadArgument(message=f"Invalid mode passed. Please refrence {ctx.prefix}help role")
 
         # await ctx.send(f'Sorry, not implemented yet {ctx.author.name}!')
+
+    #   Watch for if a user reacts with a pin emoji to a message and is the message author
+    #   if so, pin it to the channel
+    #   Cannot use regular "on_reaction_add" b/c messages have to be in bot's current cache
+    #   (bot has to have been online when sent)
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):   
+        # print(f"I saw a reaction!")
+        emoji = payload.emoji
+
+        #   Check if message author is the same as user
+        usr = self.bot.get_user(payload.user_id)
+        chn = self.bot.get_channel(payload.channel_id)
+        msg = await chn.fetch_message(payload.message_id)
+        if (usr == msg.author):
+            print(f"User {usr} reacted to their own message with {emoji} ({emoji!r})")
+            #   Check if the reaction is the pin emoji
+            if (emoji.name == self.pinEmoji):
+                print(f"Pinning message id={payload.message_id} from user {usr}")
+                await msg.pin(reason = f"User {usr} requested a message pin via {emoji}")
+
+    #   Handles removal too
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):   
+        # print(f"I saw a reaction was removed!")
+        emoji = payload.emoji
+
+        #   Check if message author is the same as user
+        usr = self.bot.get_user(payload.user_id)
+        chn = self.bot.get_channel(payload.channel_id)
+        msg = await chn.fetch_message(payload.message_id)
+        if (usr == msg.author):
+            print(f"User {usr} removed reaction to their own message with {emoji} ({emoji!r})")
+            #   Check if the reaction is the pin emoji
+            if (emoji.name == self.pinEmoji):
+                print(f"Unpinning message id={payload.message_id} from user {usr}")
+                await msg.unpin(reason = f"User {usr} requested a message unpin via removing {emoji}")
+
+
