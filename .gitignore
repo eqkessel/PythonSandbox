@@ -8,3 +8,17 @@ VectorPy/__pycache__/
 Vectors/vector/__pycache__/
 
 WormholeRaycastTests/.vscode/
+
+DiscordBots/.vscode/
+
+DiscordBots/logs/
+
+DiscordBots/Goss Bot/__pycache__/
+
+DiscordBots/Goss Bot/logs/
+
+DiscordBots/Goss Bot/.env
+
+DiscordBots/Goss Bot/secretConfig.json
+
+*.code-workspace
