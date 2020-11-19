@@ -1,24 +1,25 @@
 
 AoC2019/intcode/__pycache__/
 
+Vectors/vector/__pycache__/
 VectorPy/.vscode/
 
 VectorPy/__pycache__/
 
-Vectors/vector/__pycache__/
-
 WormholeRaycastTests/.vscode/
 
-DiscordBots/.vscode/
+DiscordBots/Goss Bot/.env
 
-DiscordBots/logs/
+DiscordBots/Goss Bot/tokenConfig.json
+
+DiscordBots/Goss Bot/secretConfig.json
 
 DiscordBots/Goss Bot/__pycache__/
 
 DiscordBots/Goss Bot/logs/
 
-DiscordBots/Goss Bot/.env
-
-DiscordBots/Goss Bot/secretConfig.json
-
 *.code-workspace
+
+DiscordBots/.vscode/
+
+DiscordBots/logs/
