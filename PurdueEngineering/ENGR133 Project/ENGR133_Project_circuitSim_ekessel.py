@@ -13,16 +13,27 @@ from collections import namedtuple
 # Convert decibels to unitless voltage amplification
 def dBtoAmp(decibels): return (10 ** (decibels / 20))
 
+'''
+Circuit Values in Actual Circuit:
+    C:  Ceramic Capacitor 105 = 1 uF = 1e-6 F
+    R1: 100kOhm = 100e+3 Ohm
+    R2 = R3: 10kOhm = 10e+3 Ohm
+    Op-Amp: LM358-N, gain 100 dB
+    Vcc:  +9v
+    Vdd:  0v
+    Vref: +4.5v
+'''
+
 # Use a namedtuple type to create a sinmple container with named member elements
 Consts = namedtuple('Consts', ['C', 'R1', 'R2', 'R3', 'A', 'VCC', 'VDD', 'VREF'])
-c = Consts(C    = 10e-6, # Farads
-           R1   = 10e+3, # Ohms
-           R2   = 1e+3,  # Ohms
-           R3   = 1e+3,  # Ohms
+c = Consts(C    = 1e-6,     # Farads
+           R1   = 100e+3,   # Ohms
+           R2   = 10e+3,    # Ohms
+           R3   = 10e+3,    # Ohms
            A    = dBtoAmp(100), # Given in decibels, convert to unitless amplification
-           VCC  = 9,     # Volts, positive power rail
-           VDD  = 0,     # Volts, negative power rail
-           VREF = 4.5)   # Volts, fixed reference voltage
+           VCC  = 9,        # Volts, positive power rail
+           VDD  = 0,        # Volts, negative power rail
+           VREF = 4.5)      # Volts, fixed reference voltage
 
 
 # Uses a lambda to create a function that behaves like an op-amp
@@ -38,7 +49,7 @@ def dQ_dt(t, Q, consts, Vout):
 op_amp = makeOpAmpFunc(c.A, c.VCC, c.VDD)  # op-amp function
 
 t0_s = 0.0   # Simulation start time
-tf_s = 20.   # Simulation stop time in seconds
+tf_s = 1.    # Simulation stop time in seconds
 dt_s = 0.001 # Simulation time step in seconds
 
 # Arrays to hold simulation data
