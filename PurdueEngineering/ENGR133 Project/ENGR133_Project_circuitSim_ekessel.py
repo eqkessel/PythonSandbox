@@ -106,7 +106,7 @@ else:
         
 print("\nThe simulation constants are:")
 for value_name in CONST_NAMES:
-    print(f" {value_name:4} = {c.__getattribute__(value_name)} [{CONST_NAMES[value_name]}]")
+    print(f" {value_name:4} = {c.__getattribute__(value_name):7} [{CONST_NAMES[value_name]}]")
   
       
 ''' ===== Simulation Section ===== '''
@@ -147,20 +147,26 @@ while (rk4.successful() and rk4.t < c.T_F and ts_index < len(time_steps_s)):
 
 ''' ===== Plot/Output Section ===== '''
 
-fig, ax1 = plt.subplots()
+fig = plt.figure()
+
+ax1 = fig.add_axes((0.1, 0.22, 0.8, 0.7))
 
 ax1.set_xlabel('Time, seconds')
-ax1.set_ylabel('Volts')
-ax1.plot(time_steps_s, output_volts, label='Output')
-ax1.plot(time_steps_s, ninvrt_inp_V, label='Non-inverting input')
-ax1.plot(time_steps_s, invert_inp_V, label='Inverting input')
+ax1.set_ylabel('Volts', color='tab:blue')
+ax1.plot(time_steps_s, output_volts, '-', label='Output [V]', color='tab:purple')
+ax1.plot(time_steps_s, ninvrt_inp_V, '--', label='Non-inverting input [V]', color='tab:green')
+ax1.plot(time_steps_s, invert_inp_V, '--', label='Inverting input [V]', color='tab:blue')
+ax1.tick_params(axis='y', labelcolor='tab:blue')
 
 ax2 = ax1.twinx() # Create graph with twinned x-axis
 
-ax2.set_ylabel('Charge, Coulombs')
-ax2.plot(time_steps_s, cap_charge_C, label='Capacitor Charge', color='tab:red')
+ax2.set_ylabel('Capacitor Charge, Coulombs', color='tab:orange')
+ax2.plot(time_steps_s, cap_charge_C, ':', label='Capacitor Charge [C]', color='tab:orange')
+ax2.tick_params(axis='y', labelcolor='tab:orange')
 
-fig.legend()
+plt.title("Simulation Data vs. Time")
+
+fig.legend(ncol=3, loc="upper right", bbox_to_anchor=(0., 0.02, 1., 0.1), mode="expand")
 
 fig.tight_layout()
 plt.show()
