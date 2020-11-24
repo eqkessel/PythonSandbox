@@ -36,6 +36,26 @@
 #******************************************************************************
 
 import numpy as np
+import json
+
+CONST_NAMES = {'C':'Farads',
+               'R1':'Ohms',
+               'R2':'Ohms',
+               'R3':'Ohms',
+               'GAIN':'dB',
+               'VCC':'Volts',
+               'VDD':'Volts',
+               'VREF':'Volts',
+               'T_0':'Seconds',
+               'T_F':'Seconds',
+               'T_S':'Seconds'}
+
+# Validate the contents of a JSON file
+def validateJSONconstants(path):
+    with open(path) as fileobj:
+        json_file = json.load(fileobj)
+        if not all(key in json_file for key in CONST_NAMES):
+            raise ValueError("JSON file missing neccesary parameters")
 
 # Convert decibels to unitless voltage amplification
 def dBtoAmp(decibels): return (10 ** (decibels / 20))
