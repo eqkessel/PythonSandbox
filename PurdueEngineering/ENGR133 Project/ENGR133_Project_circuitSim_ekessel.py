@@ -71,8 +71,7 @@ if inval == 0: # Exit
     print("Exiting...")
     sys.exit()
 elif inval == 3: # Manual input
-    raise NotImplementedError("Coming soon!")
-    c = None # Dummy, replace with input function
+    c = userInputCalculate(os.path.join(filedir, DEFAULTS_FNAME))
 else:
     if inval == 1: # Default file
         json_path = os.path.join(filedir, DEFAULTS_FNAME)
@@ -102,11 +101,13 @@ else:
     # We have a valid path now, load the constants
     with open(json_path) as json_file_obj:
         c = json.load(json_file_obj, object_hook = lambda d : SimpleNamespace(**d))
-        c.A = dBtoAmp(c.GAIN)
-        
+
+c.A = dBtoAmp(c.GAIN)
+
+# Display the constants for the simulation that were just loaded       
 print("\nThe simulation constants are:")
-for value_name in CONST_NAMES:
-    print(f" {value_name:4} = {c.__getattribute__(value_name):7} [{CONST_NAMES[value_name]}]")
+for val_name in CONST_NAMES:
+    print(f" {val_name:4} = {c.__getattribute__(val_name):7} [{CONST_NAMES[val_name]}]")
   
       
 ''' ===== Simulation Section ===== '''
@@ -123,6 +124,8 @@ cap_charge_C = np.zeros_like(time_steps_s)  # Charge on the capacitor (Coulombs)
 output_volts = np.zeros_like(time_steps_s)  # Output voltage of the op-amp
 invert_inp_V = np.zeros_like(time_steps_s)  # Inverting input voltage on the op-amp
 ninvrt_inp_V = np.zeros_like(time_steps_s)  # Non-inverting input voltage on the op-amp
+
+reference_V = np.full_like(time_steps_s, c.VREF) # Used in plotting later
 
 # Initialize the numerical integrator
 rk4 = ode(dQ_dt).set_integrator('dopri5')   # Runge-Kutta method of order (4)5
@@ -147,28 +150,35 @@ while (rk4.successful() and rk4.t < c.T_F and ts_index < len(time_steps_s)):
 
 ''' ===== Plot/Output Section ===== '''
 
-fig = plt.figure()
+f_Hz, T_s, duty_cycle, t_high, t_low = computeFrequencyParams(c)
 
-ax1 = fig.add_axes((0.1, 0.22, 0.8, 0.7))
+print(f"\nThe circuit oscillates with a frequency of {f_Hz:.3f} Hz (Period = {T_s:.3f} s).")
+print(f"The duty cycle is {duty_cycle:.1%} ({t_high:.3f} s high / {t_low:.3f} s low).")
+
+fig1 = plt.figure()
+
+ax1 = fig1.add_axes((0.1, 0.22, 0.8, 0.7))
 
 ax1.set_xlabel('Time, seconds')
 ax1.set_ylabel('Volts', color='tab:blue')
-ax1.plot(time_steps_s, output_volts, '-', label='Output [V]', color='tab:purple')
+ax1.plot(time_steps_s, reference_V, ':', label='Voltage Reference [V]', color='tab:gray', alpha=0.5)
+ax1.plot(time_steps_s, output_volts, '-', label='Output [V]', color='tab:purple', alpha=0.75)
 ax1.plot(time_steps_s, ninvrt_inp_V, '--', label='Non-inverting input [V]', color='tab:green')
-ax1.plot(time_steps_s, invert_inp_V, '--', label='Inverting input [V]', color='tab:blue')
+ax1.plot(time_steps_s, invert_inp_V, '-', label='Inverting input [V]', color='tab:blue')
+plt.yticks(np.linspace(np.floor(c.VDD), np.ceil(c.VCC), int(np.ceil(c.VCC) - np.floor(c.VDD)) + 1))
+plt.grid(ls='--', lw=0.5)
 ax1.tick_params(axis='y', labelcolor='tab:blue')
 
 ax2 = ax1.twinx() # Create graph with twinned x-axis
 
 ax2.set_ylabel('Capacitor Charge, Coulombs', color='tab:orange')
-ax2.plot(time_steps_s, cap_charge_C, ':', label='Capacitor Charge [C]', color='tab:orange')
+ax2.plot(time_steps_s, cap_charge_C, '-.', label='Capacitor Charge [C]', color='tab:orange', alpha=0.75)
 ax2.tick_params(axis='y', labelcolor='tab:orange')
 
 plt.title("Simulation Data vs. Time")
 
-fig.legend(ncol=3, loc="upper right", bbox_to_anchor=(0., 0.02, 1., 0.1), mode="expand")
+fig1.legend(ncol=3, loc="upper right", bbox_to_anchor=(0., 0.02, 1., 0.1), mode="expand")
 
-fig.tight_layout()
 plt.show()
 
 # ninv_inputs = np.linspace(c.VDD, c.VCC) # input voltages to non-inverting input
