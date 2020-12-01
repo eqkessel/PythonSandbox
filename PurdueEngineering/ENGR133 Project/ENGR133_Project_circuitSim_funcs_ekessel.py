@@ -36,11 +36,11 @@
 #******************************************************************************
 
 import sys
-import os
 import numpy as np
 import json
 from types import SimpleNamespace # Container where values can be accessed like members
 
+# Expected constant parameters and their units
 CONST_NAMES = {'C':'Farads',
                'R1':'Ohms',
                'R2':'Ohms',
@@ -51,19 +51,21 @@ CONST_NAMES = {'C':'Farads',
                'VREF':'Volts',
                'T_0':'Seconds',
                'T_F':'Seconds',
-               'T_S':'Seconds'}
+               'DT':'Seconds'}
 
 # Validate the contents of a JSON file
 def validateJSONconstants(path):
     with open(path) as fileobj:
         json_file = json.load(fileobj)
+        # Use generator to make an iterable that is all true iff the json file has the needed values
         if not all(key in json_file for key in CONST_NAMES):
+            # Raise an error to be handled
             raise ValueError("JSON file missing neccesary parameters")
 
 # Convert decibels to unitless voltage amplification
 def dBtoAmp(decibels): return (10 ** (decibels / 20))
 
-# Uses a lambda to create a function that behaves like an op-amp
+# Use a lambda to create a function that behaves like an op-amp
 def makeOpAmpFunc(gain, vcc, vdd = 0):
     if vcc <= vdd:
         raise ValueError("Vcc must have a higher potential than Vdd")
@@ -71,9 +73,10 @@ def makeOpAmpFunc(gain, vcc, vdd = 0):
 
 # Input values and calculate values
 def userInputCalculate(defaults_fpath):
-    with open(defaults_fpath) as fileobj: # Load defaults
+    with open(defaults_fpath) as fileobj: # Pre-load defaults
         c = json.load(fileobj, object_hook = lambda d : SimpleNamespace(**d))
-        
+    
+    # Ask the user to pick between complete manual input or RC const calculation
     modes = ["Input circuit values.", "Calculate RC constant for frequency/period."]
     print("\nPlease select a mode or 0 to exit:")
     for idx, option in enumerate(modes):
@@ -99,14 +102,14 @@ def userInputCalculate(defaults_fpath):
             instr = input(f" {val_name:<4} (Default = {c.__getattribute__(val_name):7} [{CONST_NAMES[val_name]}]) {(8 - unit_name_len) * '-'}> ")
             try:
                 new_val = float(instr)
-                c.__setattr__(val_name, new_val)
+                c.__setattr__(val_name, new_val) # Set an attribute using its name as a string
             except ValueError:
-                pass
-    else:
+                pass # Just ignore bad inputs
+    else:   # Compute RC values based on oscilation period/frequency
         print("In order to calcuate for a specific frequency or period, the default values will be used for most constants.")
-        valid_cnames = ['GAIN', 'T_0', 'T_F', 'T_S']
+        valid_cnames = ['GAIN', 'T_0', 'T_F', 'DT'] # Constants that user may adjust
         print("For each of the values below, enter a positive value or leave blank for the default:")
-        for val_name in valid_cnames:
+        for val_name in valid_cnames: # Same as above but for different constant list
             unit_name_len = len(CONST_NAMES[val_name]) # For making it look good
             instr = input(f" {val_name:<4} (Default = {c.__getattribute__(val_name):7} [{CONST_NAMES[val_name]}]) {(8 - unit_name_len) * '-'}> ")
             try:
@@ -115,62 +118,63 @@ def userInputCalculate(defaults_fpath):
             except ValueError:
                 pass
          
-        while True:
+        while True: # Determine whether or not user wants to calculate using frequency or period
             instr = input("Please select [f]requency or [p]eriod -> ").lower()
             if instr == 'f':
                 prompt = "frequency [Hz]"
-                convert = lambda inp : 1 / inp
+                convert = lambda inp : 1 / inp # Converter function from Hz to sec
                 break
             elif instr == 'p':
                 prompt = "period [s]"
-                convert = lambda inp: inp
+                convert = lambda inp: inp      # Pass-through function (sec -> sec)
                 break
             print("Please enter 'f' or 'p' only.")
             
-        while True:
+        while True: # Get desired constant parameter from user
             instr = input(f"Enter the desired {prompt} -> ")
             try:
                 inval = float(instr)
                 if inval <= 0:
                     raise ValueError("Value must be positive")
-                period = convert(inval)
+                period = convert(inval) # Store as period using converter function
                 break
             except ValueError as e:
                 print(f"Error: {e}")
                 
-        RC = period / (2 * np.log(3))
+        RC = period / (2 * np.log(3)) # Calculate needed RC constant (easy w/ assumptions)
         print(f"The needed RC time constant is {RC:.3f} [Ohm-Farads].")
         
-        while True:
+        while True: # Determine whether or not user wants R or C to be a known value
             instr = input("Please select whether to fix [r]esistance or [c]apacitance -> ").lower()
             if instr == 'r':
                 prompt = "resistance [Ohms]"
-                calculate = lambda R : (R, RC / R)
+                calculate = lambda R : (R, RC / R) # Takes R and makes a tuple (R, C) using RC
                 break
             elif instr == 'c':
                 prompt = "capacitance [Farads]"
-                calculate = lambda C : (RC / C, C)
+                calculate = lambda C : (RC / C, C) # Takes C and makes a tuple (R, C) using RC
                 break
             print("Please enter 'r' or 'c' only.")
             
-        while True:
+        while True: # Get the desired constant from the user
             instr = input(f"Enter the desired {prompt} -> ")
             try:
                 inval = float(instr)
                 if inval <= 0:
                     raise ValueError("Value must be positive")
-                R, C = calculate(inval)
+                R, C = calculate(inval) # Correctly calculate R and C from the input and RC
                 break
             except ValueError as e:
                 print(f"Error: {e}")
                 
-        c.C = C
+        c.C = C     # Update the constant params
         c.R1 = R                
     
-    return c
+    return c # Completed constant values
 
 # Compute information about the oscillation of the circuit based on the constants
 def computeFrequencyParams(c):
+    # Lots of math... see report for explanation
     t_high = c.R1 * c.C * (np.log(1 - (((c.VDD - c.VREF) * c.R2) /
                                   ((c.R2 + c.R3) * (c.VCC - c.VREF)))) -
                            np.log(1 - (c.R2 / (c.R2 + c.R3))))
