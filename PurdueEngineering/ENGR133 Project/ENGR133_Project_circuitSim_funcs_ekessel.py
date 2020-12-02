@@ -47,7 +47,7 @@ CONST_NAMES = {'C':'Farads',
                'R3':'Ohms',
                'GAIN':'dB',
                'VCC':'Volts',
-               'VDD':'Volts',
+               'VEE':'Volts',
                'VREF':'Volts',
                'T_0':'Seconds',
                'T_F':'Seconds',
@@ -66,10 +66,10 @@ def validateJSONconstants(path):
 def dBtoAmp(decibels): return (10 ** (decibels / 20))
 
 # Use a lambda to create a function that behaves like an op-amp
-def makeOpAmpFunc(gain, vcc, vdd = 0):
-    if vcc <= vdd:
-        raise ValueError("Vcc must have a higher potential than Vdd")
-    return lambda ninv, inv : (np.clip((gain * (ninv - inv) + (vcc + vdd) / 2), vdd, vcc))
+def makeOpAmpFunc(gain, vcc, vee = 0):
+    if vcc <= vee:
+        raise ValueError("Vcc must have a higher potential than Vee")
+    return lambda ninv, inv : (np.clip((gain * (ninv - inv) + (vcc + vee) / 2), vee, vcc))
 
 # Input values and calculate values
 def userInputCalculate(defaults_fpath):
@@ -175,11 +175,11 @@ def userInputCalculate(defaults_fpath):
 # Compute information about the oscillation of the circuit based on the constants
 def computeFrequencyParams(c):
     # Lots of math... see report for explanation
-    t_high = c.R1 * c.C * (np.log(1 - (((c.VDD - c.VREF) * c.R2) /
+    t_high = c.R1 * c.C * (np.log(1 - (((c.VEE - c.VREF) * c.R2) /
                                   ((c.R2 + c.R3) * (c.VCC - c.VREF)))) -
                            np.log(1 - (c.R2 / (c.R2 + c.R3))))
     t_low  = c.R1 * c.C * (np.log(1 - (((c.VCC - c.VREF) * c.R2) /
-                                  ((c.R2 + c.R3) * (c.VDD - c.VREF)))) -
+                                  ((c.R2 + c.R3) * (c.VEE - c.VREF)))) -
                            np.log(1 - (c.R2 / (c.R2 + c.R3))))
     period = t_high + t_low
     frequency = 1 / period

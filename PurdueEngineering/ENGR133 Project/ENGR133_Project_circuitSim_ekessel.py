@@ -117,7 +117,7 @@ for val_name in CONST_NAMES:
 def dQ_dt(t, Q, consts, Vout):
     return [((Vout - consts.VREF) /  consts.R1) - (Q[0] / (consts.R1 * consts.C))]
 
-op_amp = makeOpAmpFunc(c.A, c.VCC, c.VDD)  # Make the op-amp function
+op_amp = makeOpAmpFunc(c.A, c.VCC, c.VEE)  # Make the op-amp function
 
 # Arrays to hold simulation data
 time_steps_s = np.arange(c.T_0, c.T_F, c.DT)    # Time steps for the simulation
@@ -162,6 +162,7 @@ f_Hz, T_s, duty_cycle, t_high, t_low = computeFrequencyParams(c)
 print(f"\nThe circuit oscillates with a frequency of {f_Hz:.3f} Hz (Period = {T_s:.3f} s).")
 print(f"The duty cycle is {duty_cycle:.1%} ({t_high:.3f} s high / {t_low:.3f} s low).")
 
+plt.ion()   # Enable interactive mode
 fig1 = plt.figure() # Create a graph figure for manual control
 
 ax1 = fig1.add_axes((0.1, 0.22, 0.8, 0.7)) # Space for the legend, etc
@@ -173,7 +174,7 @@ ax1.plot(time_steps_s, reference_V, ':', label='Voltage Reference [V]', color='t
 ax1.plot(time_steps_s, output_volts, '-', label='Output [V]', color='tab:purple', alpha=0.75)
 ax1.plot(time_steps_s, ninvrt_inp_V, '--', label='Non-inverting input [V]', color='tab:green')
 ax1.plot(time_steps_s, invert_inp_V, '-', label='Inverting input [V]', color='tab:blue')
-plt.yticks(np.linspace(np.floor(c.VDD), np.ceil(c.VCC), int(np.ceil(c.VCC) - np.floor(c.VDD)) + 1))
+plt.yticks(np.linspace(np.floor(c.VEE), np.ceil(c.VCC), int(np.ceil(c.VCC) - np.floor(c.VEE)) + 1))
 plt.grid(ls='--', lw=0.5)
 ax1.tick_params(axis='y', labelcolor='tab:blue')
 
@@ -191,10 +192,42 @@ fig1.legend(ncol=3, loc="upper right", bbox_to_anchor=(0., 0.02, 1., 0.1), mode=
 
 plt.show()
 
-# ninv_inputs = np.linspace(c.VDD, c.VCC) # input voltages to non-inverting input
-# outputs = np.zeros_like(ninv_inputs)
+# plt.draw()  # Non-blocking
+# plt.pause(1) # Sleep main script to give figure time to draw
+# # See https://stackoverflow.com/questions/28269157/plotting-in-a-non-blocking-way-with-matplotlib
 
-# for index in range(len(ninv_inputs)):
-#     outputs[index] = op_amp(ninv_inputs[index], c.VCC / 2)
+# # ninv_inputs = np.linspace(c.VDD, c.VCC) # input voltages to non-inverting input
+# # outputs = np.zeros_like(ninv_inputs)
+
+# # for index in range(len(ninv_inputs)):
+# #     outputs[index] = op_amp(ninv_inputs[index], c.VCC / 2)
     
-# plt.plot(ninv_inputs, outputs)
+# # plt.plot(ninv_inputs, outputs)
+
+
+''' ===== Data File Output Section ===== '''
+
+# Columnate data into a single numpy array for CSV output
+columnated = np.column_stack((time_steps_s, reference_V, output_volts,
+                             ninvrt_inp_V, invert_inp_V, cap_charge_C))
+np.savetxt('output.csv', columnated, delimiter=', ', comments='', fmt='%e',
+           header='Time [s], Reference [V], Output [V], Non-Inverting Input [V], Inverting Input [V], Capacitor Charge [C]',)
+
+
+# while inval == 3: # Ask user if they want to save the constants if they manually entered them
+#     instr = input("Do you want to save these constants to a file? y/[n] -> ").lower()
+#     try:
+#         if instr == 'y':
+#             raise NotImplementedError("Not implemented yet")
+#             break
+#         elif instr == 'n' or instr == '':
+#             break
+#         else:
+#             raise ValueError("Please enter only 'y' or 'n' or leave blank")
+#     except (ValueError, NotImplementedError) as e:
+#         print(f"Error: {e}")
+
+# input(":")        
+        
+# ''' Ensure figure won't close '''
+# plt.show()
