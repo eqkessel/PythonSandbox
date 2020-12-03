@@ -46,6 +46,7 @@ from tqdm import tqdm # Progress bar
 
 from ENGR133_Project_circuitSim_funcs_ekessel import * # Import everything
 
+
 ''' ===== Data/File Loading Section ===== '''
 
 filedir = os.path.dirname(os.path.abspath(__file__)) # Locate this file and save directory
@@ -154,6 +155,7 @@ with tqdm(total=len(time_steps_s), desc="Running Simulation") as pbar: # Create 
         pbar.update()
 print(flush=True) # Flush the buffer after completing too
 
+
 ''' ===== Plot/Output Section ===== '''
 
 # Compute information about the oscillation charactaristics of the circuit
@@ -192,18 +194,6 @@ fig1.legend(ncol=3, loc="upper right", bbox_to_anchor=(0., 0.02, 1., 0.1), mode=
 
 plt.show()
 
-# plt.draw()  # Non-blocking
-# plt.pause(1) # Sleep main script to give figure time to draw
-# # See https://stackoverflow.com/questions/28269157/plotting-in-a-non-blocking-way-with-matplotlib
-
-# # ninv_inputs = np.linspace(c.VDD, c.VCC) # input voltages to non-inverting input
-# # outputs = np.zeros_like(ninv_inputs)
-
-# # for index in range(len(ninv_inputs)):
-# #     outputs[index] = op_amp(ninv_inputs[index], c.VCC / 2)
-    
-# # plt.plot(ninv_inputs, outputs)
-
 
 ''' ===== Data File Output Section ===== '''
 
@@ -212,22 +202,3 @@ columnated = np.column_stack((time_steps_s, reference_V, output_volts,
                              ninvrt_inp_V, invert_inp_V, cap_charge_C))
 np.savetxt('output.csv', columnated, delimiter=', ', comments='', fmt='%e',
            header='Time [s], Reference [V], Output [V], Non-Inverting Input [V], Inverting Input [V], Capacitor Charge [C]',)
-
-
-# while inval == 3: # Ask user if they want to save the constants if they manually entered them
-#     instr = input("Do you want to save these constants to a file? y/[n] -> ").lower()
-#     try:
-#         if instr == 'y':
-#             raise NotImplementedError("Not implemented yet")
-#             break
-#         elif instr == 'n' or instr == '':
-#             break
-#         else:
-#             raise ValueError("Please enter only 'y' or 'n' or leave blank")
-#     except (ValueError, NotImplementedError) as e:
-#         print(f"Error: {e}")
-
-# input(":")        
-        
-# ''' Ensure figure won't close '''
-# plt.show()
