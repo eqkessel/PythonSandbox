@@ -6,7 +6,7 @@ Created on Sun Dec  6 13:52:03 2020
 """
 
 # One-liner
-from functools import reduce; print(sum(map(lambda g : len(g), map(lambda l : reduce(lambda x, y : set(x) & set(y), l), map(lambda item : item.split(), open("input.txt").read().split('\n\n'))))))
+from functools import reduce; print(sum(map(len , map(lambda l : reduce(lambda x, y : set(x) & set(y), l), map(lambda item : item.split(), open("input.txt").read().split('\n\n'))))))
 
 # from functools import reduce
 
