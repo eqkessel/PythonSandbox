@@ -3,6 +3,7 @@
 #   Written by Ethan Kessel (c) 2020
 
 import asyncio
+import io
 import discord
 from discord.ext import commands
 from discord.ext.commands import command, Bot, Cog, CommandNotFound
@@ -101,6 +102,40 @@ class BasicUtilsCog(Cog):
             raise commands.BadArgument(message=f"Invalid mode passed. Please refrence {ctx.prefix}help role")
 
         # await ctx.send(f'Sorry, not implemented yet {ctx.author.name}!')
+
+    @command(name='members')
+    async def members(self, ctx):
+        print(f"Command 'members' triggered by {ctx.author}")
+
+        check_flag = False
+        for role_id in self.bot.secret["ADMIN_ROLES"]:
+            check_role = discord.utils.get(ctx.guild.roles, id=role_id)
+            if check_role in ctx.author.roles:
+                check_flag = True
+                break
+
+        if not check_flag:
+            await ctx.send(f"You do not have permission to run this command!")
+            print(f"Permission denied.")
+            return
+
+        await ctx.send(f"Generating members list...")
+        async with ctx.typing():
+            # Make a binary file-like object for Discord to attach
+            users_csv = io.BytesIO(b"USER NICKNAME, USERNAME + TAG, JOINED DATE + TIME, ROLES\n\n")
+            users_csv.seek(0, 2)    # Go to the end
+            for member in ctx.guild.members:
+                # Add each user's details to the CSV
+                users_csv.write(f"{member.display_name}, @{member}, {member.joined_at},\
+                    {', '.join(role.name for role in member.roles)}\n".encode())
+
+            users_csv.seek(0)   # Go back to the beginning!
+
+        await ctx.reply(f"Members file CSV generated!", file=discord.File(users_csv, 'members.csv'))
+
+        users_csv.close()
+
+        print(f"Members list returned to {ctx.author}")
 
     #   Watch for if a user reacts with a pin emoji to a message and is the message author
     #   if so, pin it to the channel
