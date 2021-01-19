@@ -17,7 +17,7 @@ from discord.ext.commands import command, Bot, Cog, CommandNotFound
 
 import PrinTee
 
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 
 class KesselBot(Bot):
     #   Load .json file given a path and filename, used to get configs
@@ -58,7 +58,8 @@ class KesselBot(Bot):
 
         print(f"Initializing bot component")
         #   Run parent class Bot constructor using options from config
-        super(KesselBot, self).__init__(**self.config['bot_options'])
+        self.bot_intents = discord.Intents.all()    # Needed to have access to messages and members
+        super(KesselBot, self).__init__(**self.config['bot_options'], intents=self.bot_intents)
 
         #   Register methods to run pre/post any command
         self.before_invoke(self.__bot_before_invoke)
