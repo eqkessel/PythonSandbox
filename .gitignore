@@ -14,3 +14,5 @@ DiscordBots/Goss Bot/logs/
 *.code-workspace
 
 DiscordBots/logs/
+
+PurdueEngineering/ENGR133 Project/__pycache__/
