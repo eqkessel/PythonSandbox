@@ -20,7 +20,7 @@ def dotProd(vect1, vect2):
     return sum([a * b for a, b in zip(vect1, vect2)])
 
 def crsProd(vect1, vect2):
-    # Dot product function - takes 2 vectors of the same size. Currently no component name checks
+    # Cross product function - takes 2 vectors of the same size. Currently no component name checks
     if (not (isinstance(vect1, Vector) and isinstance(vect2, Vector))):
         raise TypeError("inputs to a dot product must both be vectors")
     if (not (len(vect1) == len(vect2) == 3)):
@@ -42,7 +42,35 @@ def crsProd(vect1, vect2):
 def normalize(vect):
     # Normalize a vector; i.e. make to have |v| = 1
     return vect / abs(vect)
-    
+
+def angle(vect):
+    # Compute polar angle of 2D vector from the positive axis of the first component counterclockwise
+    if (not (isinstance(vect, Vector))):
+        raise TypeError("input to angle() requires a vector")
+    if (not (len(vect) == 2)):
+        raise ValueError("can only find the angle of a vector in 2-space")
+    tmp = tuple(vect)
+    return math.atan2(tmp[1], tmp[0])
+
+def resize(vect, newSize, gapFill = 0):
+    # Convert a vector in one size of space into another size of space, either by cutting the number
+    # of components down (keeping the first components) or by adding blank components using gapFill.
+    # when a vector is expanded (or resized to current size) component names are reset to defaults.
+    if (newSize < 2):
+        raise ValueError("cannot resize a vector to less than 2 components")
+    if (newSize < len(vect)):
+        # Truncate vector
+        tempDict = dict(vect.components)
+        vectKeys = list(tempDict.keys())
+        retVect = {vectKeys[i]:tempDict[vectKeys[i]] for i in range(newSize)}
+        return Vector(retVect)
+    else:
+        # Expand vector (using default index names)
+        tempList = list(vect)
+        while (len(tempList) < newSize):
+            tempList.append(gapFill)
+        return Vector(tempList)
+        
 class Vector:
     __unitComponents = 'ijk'
     
